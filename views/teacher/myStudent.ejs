@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<%- include("./partials/head.ejs") %>
+<style>
+    .separator-row {
+        padding: 10px;
+        border-bottom: 3px solid black;
+        text-align: center;
+        font-weight: bold;
+        font-size: 1.2rem;
+    }
+
+    table {
+        width: 100%; /* Ensures the table uses the full width */
+        border-collapse: collapse; /* Prevents double borders */
+    }
+
+    th, td {
+        padding: 10px; /* Consistent padding */
+        text-align: left; /* Align text to the left for readability */
+    }
+
+</style>
+
+    <body>
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-lg-2">
+                    <%- include("./partials/nav.ejs") %>
+                </div>
+                <!--------------------END ASIDE  ------------------>
+                <!-- Modal -->
+
+
+
+                <!--  END Modal -->
+                <div class="col-lg-10 ">
+                    <main>
+                        <div class="row">
+                            <div class="col-md-6">
+
+                            </div>
+
+                            <div class=" col-md-6 ">
+                                <div class="left" style="margin-top: 0.2rem;">
+                                    <%- include("./partials/top.ejs") %> 
+
+                                </div>
+                            </div>
+                        </div>
+                        <table id="convetToexcel" style="display: none;">
+
+                        </table>
+                        <div class="row">
+                      
+                           <div class="col-md-12  col-sm-12">
+                                <h1>Attendance Data</h1>
+                                <div class="row" dir="ltr">
+                                    <div class="col-md-3">
+                                        
+                                        <label for="startDate">Start Date:</label>
+                                        <input type="date" id="startDate" class="form-control">
+                                        
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="endDate" >End Date:</label>
+                                        <input type="date" id="endDate" class="form-control">
+
+                                    </div>
+                                    <div class="col-md-2">
+                                        <div class="form-check mt-3">
+                                            <input type="checkbox" class="form-check-input" id="fetchAllDates">
+                                            <label class="form-check-label" for="fetchAllDates">Fetch All Dates</label>
+                                        </div>
+
+                                    </div>
+                                </div>
+                               
+                             
+                             
+                                <button type="button" id="GetStudentData" class="btn btn-outline-warning btn-md me-3 mt-5">Get Data</button>
+
+                                <div class="student-table ">
+                                    <input type="number" class="serachOnaddCard" name="attendeeID" id="attendeeID" placeholder="Student Code" required>
+                                    
+                                    <table id="myTable">
+                                        <thead>
+                                            <th style="padding: 10px;">#</th>
+                                            <th style="padding-left: 20px;">Center Name</th>
+                                            <th style="padding-left: 20px;">Group Time</th>
+                                            <th style="padding-left: 20px;">Date</th>
+                                            <th style="padding-left: 20px;">Attendance Status</th>
+                                        </thead>
+                                        <tbody></tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+
+                            <div class="pagination justify-content-between mb-5">
+            
+                                <div class="mx-auto">
+                                
+                                        <button id="ConvertToExcel" class="paginationBtns">Convert To Excel And Send Copy To Parent</button> 
+                              
+                                </div>
+
+                            </div>
+                        </div>   
+                    </main>
+                </div>
+
+                <!-------------------- END OF MAIN --------------------->
+
+            </div>
+        </div>
+
+
+
+        <script src="/assest/bootstrap.bundle.min.js"></script>
+        <script src="/assest/bootstrap.min.js"></script>
+
+ <script>
+const GetStudentData = document.getElementById('GetStudentData');
+const attendeeID = document.getElementById('attendeeID');
+const startDate = document.getElementById('startDate');
+const endDate = document.getElementById('endDate');
+const fetchAllDates = document.getElementById('fetchAllDates');
+
+GetStudentData.addEventListener('click', async () => {
+    try {
+        let url = `/teacher/myStudent/getStudentData/${attendeeID.value}`;
+        
+        // If "Fetch All Dates" is not checked, add date range to the URL
+        if (!fetchAllDates.checked) {
+            const start = startDate.value;
+            const end = endDate.value;
+            
+            if (start && end) {
+                url += `?start=${start}&end=${end}`;
+            }
+        }
+
+        const response = await fetch(url);
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        const data = await response.json();
+        console.log(data);
+
+        const table = document.querySelector('table tbody');
+        table.innerHTML = '';  // Clear table before populating
+
+        let lastCenterName = '';  // Track last center name to avoid duplication
+        let lastGroupTime = '';   // Track last group time to avoid duplication
+
+        data.attendanceHistory.forEach((item, index) => {
+            // Add a separator row when the center or group changes
+            if (item.centerName !== lastCenterName || item.groupTime !== lastGroupTime) {
+                const separatorRow = document.createElement('tr');
+                separatorRow.innerHTML = `
+                    <td colspan="5" class="separator-row">
+                        ${data.centerName} - Group Time: ${data.groupTime}
+                    </td>
+                `;
+                table.appendChild(separatorRow);
+            }
+
+            let statusColor = '';
+            if (item.status === "Present") {
+                statusColor = '#42ff04';
+            } else if (item.status === "Absent") {
+                statusColor = '#ff0404';
+            } else {
+                statusColor = '#ffd904';
+            }
+            // Create a row for each student's attendance record
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${index + 1}</td>
+                <td>----</td>
+                <td>----</td>
+                <td dir='ltr'>${item.date} - ${item.time}</td>
+                <td style="font-weight: bold; font-size:20px; color:${statusColor};">
+                    ${item.status}
+                </td>
+            `;
+            table.appendChild(row);
+
+            // Update lastCenterName and lastGroupTime
+            lastCenterName = item.centerName;
+            lastGroupTime = item.groupTime;
+        });
+
+        // Add an empty row for spacing at the end
+        const spacingRow = document.createElement('tr');
+        spacingRow.innerHTML = `<td colspan="5" style="height: 20px;"></td>`;
+        table.appendChild(spacingRow);
+
+    } catch (error) {
+        console.error('Error fetching student data:', error);
+        alert('Failed to fetch student data. Please try again later.');
+    }
+});
+
+
+    const ConvertToExcel = document.getElementById('ConvertToExcel');
+
+  ConvertToExcel.addEventListener('click', async () => {
+    try {
+        const response = await fetch(`/teacher/myStudent/convertToExcel/${attendeeID.value}`);
+        
+        // Ensure the response is OK and is of type blob
+        if (!response.ok || response.headers.get('Content-Type') !== 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') {
+            throw new Error('Network response was not ok');
+        }
+
+        // Convert the response to a blob
+        const blob = await response.blob();
+
+        // Create a URL for the blob and initiate a download
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'attendance_data.xlsx';
+        document.body.appendChild(a);
+        a.click();
+
+        // Clean up by removing the link and revoking the object URL
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+
+    } catch (error) {
+        console.error('Error converting to Excel:', error);
+        alert('Failed to convert to Excel. Please try again later.');
+    }
+});
+
+
+</script>
+
+
+
+    </body>
+
+
+</html>

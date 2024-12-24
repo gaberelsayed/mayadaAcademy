@@ -1,1 +1,1 @@
-# mayadaAcademy
+# Mayada Academy
