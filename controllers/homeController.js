@@ -55,10 +55,11 @@ const public_login_post = async (req, res) => {
 
     const token = jwt.sign({ userId: user._id }, jwtSecret);
     res.cookie('token', token, { httpOnly: true });
-    console.log(user.isTeacher);
+    console.log(user);
     if (user.isTeacher) {
       return res.redirect('/teacher/dash');
     } 
+    return res.redirect('/student/dash');
   } catch (error) {
     console.log(error);
     return res.status(500).redirect('/login');
