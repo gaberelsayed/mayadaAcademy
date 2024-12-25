@@ -58,13 +58,7 @@ const public_login_post = async (req, res) => {
     console.log(user.isTeacher);
     if (user.isTeacher) {
       return res.redirect('/teacher/dash');
-    } else {
-      if (user.subscribe) {
-        return res.redirect('/student/dash');
-      } else {
-        return res.redirect('/login?StudentCode=' + user.Code);
-      }
-    }
+    } 
   } catch (error) {
     console.log(error);
     return res.status(500).redirect('/login');
