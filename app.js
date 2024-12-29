@@ -8,7 +8,7 @@ const session = require('express-session')
 const fileUpload = require('express-fileupload');
 const cors = require('cors')
 
-
+   
 
 const homeRoutes = require('./routes/homeRoutes')
 const teacherRoutes = require('./routes/teacherRoutes')
